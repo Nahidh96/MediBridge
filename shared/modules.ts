@@ -50,6 +50,14 @@ export const MODULES: ModuleMeta[] = [
     recommendedFor: ['private_practice', 'channeling_center']
   },
   {
+    key: 'clinical_calculators',
+    name: 'Clinical Calculators',
+    description: 'Run BMI, BSA, dosing and triage calculators offline.',
+    icon: 'IconCalculator',
+    defaultEnabled: true,
+    recommendedFor: ['private_practice', 'dispensary', 'channeling_center']
+  },
+  {
     key: 'collaboration',
     name: 'Multi-Doctor Collaboration',
     description: 'Coordinate cross-cover, referrals, and shared notes securely.',

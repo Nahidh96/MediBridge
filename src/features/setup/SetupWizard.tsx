@@ -7,6 +7,7 @@ import {
   Checkbox,
   Group,
   Grid,
+  PasswordInput,
   Stepper,
   Stack,
   Text,
@@ -47,6 +48,7 @@ const SetupWizard: FC<SetupWizardProps> = ({ onComplete }: SetupWizardProps) => 
     practiceType: 'private_practice',
     centreName: '',
     location: '',
+    password: '',
     modules: getDefaultModules('private_practice')
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -163,6 +165,17 @@ const SetupWizard: FC<SetupWizardProps> = ({ onComplete }: SetupWizardProps) => 
                 }
               />
             </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <PasswordInput
+                label="Practice password (Optional)"
+                description="Set a passcode to protect future access. Stored as plain text."
+                value={form.password ?? ''}
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  setForm({ ...form, password: event.currentTarget.value })
+                }
+                placeholder="Enter password"
+              />
+            </Grid.Col>
           </Grid>
         </Stepper.Step>
 
@@ -228,6 +241,9 @@ const SetupWizard: FC<SetupWizardProps> = ({ onComplete }: SetupWizardProps) => 
                   <List.Item>Practice type: {PRACTICE_TYPE_LABELS[form.practiceType]}</List.Item>
                   {form.centreName && <List.Item>Medical centre: {form.centreName}</List.Item>}
                   {form.location && <List.Item>Location: {form.location}</List.Item>}
+                  {form.password && form.password.trim().length > 0 && (
+                    <List.Item>Practice password: ••••• (stored in plain text)</List.Item>
+                  )}
                 </List>
               </Stack>
             </Card>
@@ -277,7 +293,8 @@ const SetupWizard: FC<SetupWizardProps> = ({ onComplete }: SetupWizardProps) => 
               mutation.mutate({
                 ...form,
                 centreName: form.centreName?.trim() || undefined,
-                location: form.location?.trim() || undefined
+                location: form.location?.trim() || undefined,
+                password: form.password?.trim() || undefined
               })
             }
             disabled={!canSubmit || mutation.isPending}

@@ -29,6 +29,7 @@ export function registerSetupHandlers() {
           practiceType: rawProfile.practice_type,
           centreName: rawProfile.centre_name ?? undefined,
           location: rawProfile.location ?? undefined,
+          password: rawProfile.password ?? undefined,
           createdAt: rawProfile.created_at
         }
       : undefined;
@@ -39,9 +40,10 @@ export function registerSetupHandlers() {
     try {
       await mediBridgeDb.initialize();
       const db = mediBridgeDb.connection;
-  const { name, specialty, practiceType, location, centreName, modules } = payload;
+  const { name, specialty, practiceType, location, centreName, password, modules } = payload;
   const normalizedCentreName = centreName?.trim() ?? null;
   const normalizedLocation = location?.trim() ?? null;
+  const normalizedPassword = password?.trim() ?? null;
 
       console.log('[IPC] Setup complete: inserting doctor profile and modules', { name, specialty, practiceType, moduleCount: modules.length });
 
@@ -49,14 +51,15 @@ export function registerSetupHandlers() {
       // sql.js is in-memory and auto-persists, so atomicity isn't critical for setup
       
       const insertDoctor = db.prepare(`
-        INSERT INTO doctor_profile (id, name, specialty, practice_type, centre_name, location, created_at)
-        VALUES (1, @name, @specialty, @practiceType, @centreName, @location, CURRENT_TIMESTAMP)
+        INSERT INTO doctor_profile (id, name, specialty, practice_type, centre_name, location, password, created_at)
+        VALUES (1, @name, @specialty, @practiceType, @centreName, @location, @password, CURRENT_TIMESTAMP)
         ON CONFLICT(id) DO UPDATE SET
           name = excluded.name,
           specialty = excluded.specialty,
           practice_type = excluded.practice_type,
           centre_name = excluded.centre_name,
-          location = excluded.location
+          location = excluded.location,
+          password = excluded.password
       `);
 
       insertDoctor.run({
@@ -64,7 +67,8 @@ export function registerSetupHandlers() {
         specialty,
         practiceType,
         centreName: normalizedCentreName,
-        location: normalizedLocation
+        location: normalizedLocation,
+        password: normalizedPassword
       });
       console.log('[IPC] Doctor profile inserted');
 

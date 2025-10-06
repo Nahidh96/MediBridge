@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
+  Badge,
   Button,
   Card,
+  Divider,
   Grid,
   Group,
   Loader,
@@ -23,6 +25,7 @@ import { IconCertificate, IconPrinter } from '@tabler/icons-react';
 import type { MedicalCertificate, PatientEntity } from '@shared/entities';
 import type { MedicalCertificatePayload } from '@shared/payloads';
 import { waitForElectronApi } from '@renderer/utils/electronApi';
+import { useDoctorProfile } from '@renderer/hooks/useDoctorProfile';
 
 const CERTIFICATE_TYPES = [
   { value: 'sick_leave', label: 'Sick Leave' },
@@ -34,6 +37,7 @@ const CERTIFICATE_TYPES = [
 
 const MedicalCertificatesPage = () => {
   const queryClient = useQueryClient();
+  const { data: doctorProfile } = useDoctorProfile();
   const [opened, { open, close }] = useDisclosure(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [certificateType, setCertificateType] = useState<string | null>('sick_leave');
@@ -104,28 +108,98 @@ const MedicalCertificatesPage = () => {
     mutation.mutate(payload);
   };
 
+  const certificateTypeLabels = useMemo(() => {
+    return CERTIFICATE_TYPES.reduce<Record<string, string>>((acc, current) => {
+      acc[current.value] = current.label;
+      return acc;
+    }, {});
+  }, []);
+
+  const formatDisplayDate = (input: string) => {
+    if (!input) return '—';
+    const date = new Date(input);
+    if (Number.isNaN(date.getTime())) return input;
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }).format(date);
+  };
+
   const handlePrint = (cert: MedicalCertificate) => {
-    // Basic print implementation - will be enhanced later
+    const practiceName = doctorProfile?.centreName?.trim() || doctorProfile?.name || 'Medical Practice';
+    const doctorName = doctorProfile?.name || 'Attending Physician';
+    const doctorSpecialty = doctorProfile?.specialty ? doctorProfile.specialty : undefined;
+    const doctorLocation = doctorProfile?.location ? doctorProfile.location : undefined;
+    const todayFormatted = new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    }).format(new Date(cert.issuedAt));
+    const certificateHeading = certificateTypeLabels[cert.certificateType] || 'Medical Certificate';
+
     const printContent = `
       <html>
         <head>
-          <title>Medical Certificate</title>
+          <title>${practiceName} | Medical Certificate</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 40px; }
-            h1 { text-align: center; }
-            .content { margin: 20px 0; }
+            @page { margin: 32mm 22mm 30mm; }
+            body { font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1d1d1f; margin: 0; }
+            .page { padding: 0 0 40px; }
+            .header { text-align: center; margin-bottom: 24px; }
+            .practice-name { font-size: 20px; font-weight: 700; letter-spacing: 0.08em; }
+            .practice-meta { font-size: 12px; text-transform: uppercase; color: #555; letter-spacing: 0.12em; }
+            .divider { border-top: 2px solid #1d72f3; margin: 24px 0; }
+            .certificate-title { text-align: center; font-size: 18px; font-weight: 600; margin-bottom: 24px; letter-spacing: 0.1em; }
+            .info-grid { display: grid; grid-template-columns: 160px 1fr; gap: 8px 16px; margin-bottom: 24px; font-size: 14px; }
+            .section-title { font-weight: 600; margin-bottom: 4px; font-size: 14px; letter-spacing: 0.05em; }
+            .muted { color: #555; }
+            .body-text { font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
+            .signature { margin-top: 40px; text-align: left; }
+            .signature-line { width: 240px; border-top: 1px solid #333; margin-bottom: 8px; }
+            .footer { margin-top: 48px; font-size: 11px; text-align: center; color: #777; }
+            .badge { display: inline-block; padding: 4px 10px; background: #edf2ff; color: #1c4ed8; border-radius: 999px; font-size: 11px; letter-spacing: 0.1em; }
           </style>
         </head>
         <body>
-          <h1>MEDICAL CERTIFICATE</h1>
-          <div class="content">
-            <p><strong>Patient:</strong> ${cert.patientName || 'N/A'}</p>
-            <p><strong>Certificate Type:</strong> ${cert.certificateType}</p>
-            ${cert.diagnosis ? `<p><strong>Diagnosis:</strong> ${cert.diagnosis}</p>` : ''}
-            <p><strong>Period:</strong> ${cert.fromDate} to ${cert.toDate} (${cert.daysCount} days)</p>
-            ${cert.restrictions ? `<p><strong>Restrictions:</strong> ${cert.restrictions}</p>` : ''}
-            ${cert.additionalNotes ? `<p><strong>Notes:</strong> ${cert.additionalNotes}</p>` : ''}
-            <p><strong>Issued:</strong> ${new Date(cert.issuedAt).toLocaleDateString()}</p>
+          <div class="page">
+            <header class="header">
+              <div class="practice-name">${practiceName.toUpperCase()}</div>
+              <div class="practice-meta">${[doctorSpecialty, doctorLocation].filter(Boolean).join(' • ')}</div>
+            </header>
+            <div class="divider"></div>
+            <div class="certificate-title">MEDICAL CERTIFICATE</div>
+            <div class="info-grid">
+              <div class="muted">Certificate Type</div>
+              <div><span class="badge">${certificateHeading.toUpperCase()}</span></div>
+              <div class="muted">Patient Name</div>
+              <div>${cert.patientName || '—'}</div>
+              <div class="muted">Coverage Period</div>
+              <div>${formatDisplayDate(cert.fromDate)} to ${formatDisplayDate(cert.toDate)} (${cert.daysCount} days)</div>
+              <div class="muted">Issued On</div>
+              <div>${todayFormatted}</div>
+            </div>
+            ${cert.diagnosis ? `<div class="section">
+              <div class="section-title">Clinical Findings</div>
+              <p class="body-text">${cert.diagnosis}</p>
+            </div>` : ''}
+            ${cert.restrictions ? `<div class="section">
+              <div class="section-title">Recommended Restrictions</div>
+              <p class="body-text">${cert.restrictions}</p>
+            </div>` : ''}
+            ${cert.additionalNotes ? `<div class="section">
+              <div class="section-title">Additional Notes</div>
+              <p class="body-text">${cert.additionalNotes}</p>
+            </div>` : ''}
+            <p class="body-text">This is to certify that the above-named patient was examined and treated under my care during the stated period and is ${certificateHeading.toLowerCase()}.</p>
+            <div class="signature">
+              <div class="signature-line"></div>
+              <div>${doctorName}</div>
+              ${doctorSpecialty ? `<div class="muted">${doctorSpecialty}</div>` : ''}
+            </div>
+            <footer class="footer">
+              ${practiceName} • ${doctorLocation || 'Confidential medical document'}
+            </footer>
           </div>
         </body>
       </html>
@@ -135,7 +209,10 @@ const MedicalCertificatesPage = () => {
     if (printWindow) {
       printWindow.document.write(printContent);
       printWindow.document.close();
-      printWindow.print();
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 200);
     }
   };
 
@@ -155,59 +232,103 @@ const MedicalCertificatesPage = () => {
   return (
     <Stack gap="lg">
       <Group justify="space-between">
-        <Title order={2}>Medical Certificates</Title>
+        <Stack gap={4}>
+          <Title order={2}>Medical Certificates</Title>
+          <Text c="dimmed" size="sm">
+            Provide patients with polished, print-ready documentation that reflects your practice brand.
+          </Text>
+        </Stack>
         <Button leftSection={<IconCertificate size={18} />} onClick={open}>
           Issue Certificate
         </Button>
       </Group>
 
-      {certificatesQuery.data && certificatesQuery.data.length === 0 ? (
-        <Paper p="xl" withBorder>
-          <Text c="dimmed" ta="center">
-            No medical certificates issued yet. Click "Issue Certificate" to create one.
-          </Text>
-        </Paper>
-      ) : (
-        <Card withBorder>
-          <Table striped highlightOnHover>
+      <Card withBorder shadow="xs" radius="md">
+        <Stack gap="md">
+          <Group justify="space-between" align="flex-end">
+            <Stack gap={0}>
+              <Text fw={600} size="sm" c="dimmed">
+                Practice identity
+              </Text>
+              <Text fw={600}>{doctorProfile?.centreName || doctorProfile?.name || 'Your practice name'}</Text>
+              {(doctorProfile?.specialty || doctorProfile?.location) && (
+                <Text size="sm" c="dimmed">
+                  {[doctorProfile?.specialty, doctorProfile?.location].filter(Boolean).join(' • ')}
+                </Text>
+              )}
+            </Stack>
+            <Text size="xs" c="dimmed">
+              Issued certificates display this branding automatically.
+            </Text>
+          </Group>
+          <Divider />
+          {certificatesQuery.data && certificatesQuery.data.length === 0 ? (
+            <Paper p="xl" withBorder radius="md" bg="gray.0">
+              <Stack gap="xs" align="center">
+                <IconCertificate size={32} stroke={1.5} />
+                <Text fw={600}>No certificates issued yet</Text>
+                <Text c="dimmed" size="sm" ta="center" maw={360}>
+                  Document sick leave, fitness clearance, and more with a professional, print-ready template.
+                </Text>
+              </Stack>
+            </Paper>
+          ) : (
+            <Table highlightOnHover striped fontSize="sm" horizontalSpacing="md" verticalSpacing="sm">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Patient</Table.Th>
                 <Table.Th>Type</Table.Th>
                 <Table.Th>Diagnosis</Table.Th>
                 <Table.Th>Period</Table.Th>
-                <Table.Th>Days</Table.Th>
                 <Table.Th>Issued</Table.Th>
                 <Table.Th>Actions</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {certificatesQuery.data?.map((cert) => (
-                <Table.Tr key={cert.id}>
-                  <Table.Td>{cert.patientName || 'Unknown'}</Table.Td>
-                  <Table.Td>{cert.certificateType.replace(/_/g, ' ')}</Table.Td>
-                  <Table.Td>{cert.diagnosis || '—'}</Table.Td>
-                  <Table.Td>
-                    {cert.fromDate} to {cert.toDate}
-                  </Table.Td>
-                  <Table.Td>{cert.daysCount}</Table.Td>
-                  <Table.Td>{new Date(cert.issuedAt).toLocaleDateString()}</Table.Td>
-                  <Table.Td>
-                    <Button
-                      size="xs"
-                      variant="light"
-                      leftSection={<IconPrinter size={14} />}
-                      onClick={() => handlePrint(cert)}
-                    >
-                      Print
-                    </Button>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
+                {certificatesQuery.data?.map((cert) => (
+                  <Table.Tr key={cert.id}>
+                    <Table.Td>
+                      <Stack gap={0}>
+                        <Text fw={600}>{cert.patientName || 'Unknown patient'}</Text>
+                        <Text size="xs" c="dimmed">
+                          Issued {formatDisplayDate(cert.issuedAt)}
+                        </Text>
+                      </Stack>
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge variant="light" color="blue" size="sm">
+                        {certificateTypeLabels[cert.certificateType] || cert.certificateType.replace(/_/g, ' ')}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>{cert.diagnosis || '—'}</Table.Td>
+                    <Table.Td>
+                      <Stack gap={0}>
+                        <Text size="sm" fw={500}>
+                          {formatDisplayDate(cert.fromDate)} → {formatDisplayDate(cert.toDate)}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {cert.daysCount} day{cert.daysCount > 1 ? 's' : ''}
+                        </Text>
+                      </Stack>
+                    </Table.Td>
+                    <Table.Td>{formatDisplayDate(cert.issuedAt)}</Table.Td>
+                    <Table.Td>
+                      <Button
+                        size="xs"
+                        variant="light"
+                        leftSection={<IconPrinter size={14} />}
+                        onClick={() => handlePrint(cert)}
+                      >
+                        Print
+                      </Button>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
             </Table.Tbody>
-          </Table>
-        </Card>
-      )}
+            </Table>
+          )}
+        </Stack>
+      </Card>
 
       <Modal opened={opened} onClose={close} title="Issue Medical Certificate" size="lg">
         <Stack gap="md">

@@ -15,6 +15,7 @@ import InventoryPage from '../features/inventory/InventoryPage';
 import AnalyticsPage from '../features/analytics/AnalyticsPage';
 import CollaborationPage from '../features/collaboration/CollaborationPage';
 import MedicalCertificatesPage from '../features/certificates/MedicalCertificatesPage';
+import ClinicalCalculatorsPage from '../features/calculators/ClinicalCalculatorsPage';
 
 const AppRouter: FC = () => {
   const setupQuery = useSetupStatus();
@@ -63,6 +64,9 @@ const AppRouter: FC = () => {
             )}
             {enabledModuleKeys.includes('medical_certificates') && (
               <Route path="certificates" element={<MedicalCertificatesPage />} />
+            )}
+            {enabledModuleKeys.includes('clinical_calculators') && (
+              <Route path="calculators" element={<ClinicalCalculatorsPage />} />
             )}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
