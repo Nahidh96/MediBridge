@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Badge,
   Button,
@@ -7,30 +7,30 @@ import {
   Group,
   Loader,
   Paper,
-  Progress,
   SimpleGrid,
   Stack,
   Text,
   ThemeIcon,
   Title,
-  useMantineTheme
+  rem
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import {
-  IconUsersGroup,
+  IconArrowRight,
+  IconCalendarPlus,
   IconCalendarTime,
   IconCurrencyRupee,
+  IconFileCertificate,
   IconHeartbeat,
-  IconArrowRight,
-  IconClipboardText
+  IconUsersGroup
 } from '@tabler/icons-react';
-import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { waitForElectronApi } from '@renderer/utils/electronApi';
 import { useDoctorProfile } from '@renderer/hooks/useDoctorProfile';
 import { useModulesContext } from '@renderer/store/ModuleContext';
+import type { EnabledModule } from '@renderer/hooks/useModules';
 import { PRACTICE_TYPE_LABELS } from '@shared/modules';
 import type { PracticeType } from '@shared/setup';
+import { useNavigate } from 'react-router-dom';
 
 interface AnalyticsOverview {
   totals: {
@@ -43,9 +43,6 @@ interface AnalyticsOverview {
 }
 
 const Dashboard: React.FC = () => {
-  const theme = useMantineTheme();
-  const navigate = useNavigate();
-  const modules = useModulesContext();
   const { data, isLoading, refetch } = useQuery<AnalyticsOverview>({
     queryKey: ['analytics', 'overview'],
     queryFn: async () => {
@@ -55,39 +52,43 @@ const Dashboard: React.FC = () => {
     refetchOnWindowFocus: false
   });
   const { data: doctorProfile } = useDoctorProfile();
+  const modules = useModulesContext();
+  const navigate = useNavigate();
+
+  const enabledModuleKeys = useMemo(
+    () => modules.filter((module: EnabledModule) => module.enabled).map((module) => module.key),
+    [modules]
+  );
 
   const practiceType = doctorProfile?.practiceType as PracticeType | undefined;
   const practiceLabel = practiceType ? PRACTICE_TYPE_LABELS[practiceType] : undefined;
   const locationBlurb = [practiceLabel, doctorProfile?.location?.trim()].filter(Boolean).join(' • ');
   const greetingName = doctorProfile?.name ? doctorProfile.name.split(' ')[0] : undefined;
-  const centreName = doctorProfile?.centreName ?? `Your MediBridge HQ`;
-  const quickActionModules = useMemo(
+
+  const quickActions = useMemo(
     () =>
-      modules
-        .filter((module) => module.enabled)
-        .filter((module) => ['appointments', 'patient_records', 'medical_certificates', 'billing'].includes(module.key))
-        .slice(0, 3),
-    [modules]
+      [
+        {
+          key: 'patient_records',
+          label: 'New patient',
+          path: '/patients',
+          icon: IconUsersGroup
+        },
+        {
+          key: 'appointments',
+          label: 'Schedule visit',
+          path: '/appointments',
+          icon: IconCalendarPlus
+        },
+        {
+          key: 'medical_certificates',
+          label: 'Issue certificate',
+          path: '/certificates',
+          icon: IconFileCertificate
+        }
+      ].filter((action) => enabledModuleKeys.includes(action.key)),
+    [enabledModuleKeys]
   );
-
-  const moduleRoutes: Record<string, string> = {
-    appointments: '/appointments',
-    patient_records: '/patients',
-    e_prescriptions: '/prescriptions',
-    billing: '/billing',
-    pharmacy_inventory: '/pharmacy',
-    analytics: '/analytics',
-    collaboration: '/collaboration',
-    medical_certificates: '/certificates'
-  };
-
-  const totalAppointments = data?.totals.upcomingAppointments ?? 0;
-  const completedAppointments = data?.totals.completedAppointments ?? 0;
-  const appointmentCompletionRate = useMemo(() => {
-    const total = totalAppointments + completedAppointments;
-    if (!total) return 0;
-    return Math.round((completedAppointments / total) * 100);
-  }, [completedAppointments, totalAppointments]);
 
   React.useEffect(() => {
     void refetch();
@@ -104,107 +105,84 @@ const Dashboard: React.FC = () => {
   return (
     <Stack gap="xl">
       <Card
-        radius="lg"
+        radius="xl"
         padding="xl"
-        withBorder
+        shadow="xl"
         style={{
-          background: `linear-gradient(135deg, ${theme.colors.blue[6]} 0%, ${theme.colors.indigo[5]} 50%, ${theme.colors.cyan[5]} 100%)`,
-          color: theme.white
+          background:
+            'linear-gradient(135deg, rgba(32, 201, 151, 0.92) 0%, rgba(55, 135, 245, 0.9) 60%, rgba(111, 66, 193, 0.92) 100%)',
+          color: 'white'
         }}
       >
-        <Stack gap="md">
-          <Group justify="space-between" align="flex-start">
-            <Stack gap={4}>
-              <Title order={2} c="white">
+        <Stack gap="lg">
+          <Group justify="space-between" align="flex-start" wrap="wrap">
+            <Stack gap="xs" maw={520}>
+              <Badge color="teal" variant="light" size="sm" radius="sm" style={{ alignSelf: 'flex-start' }}>
+                {practiceLabel ?? 'MediBridge Workspace'}
+              </Badge>
+              <Title order={2} c="white" fw={700} style={{ lineHeight: 1.1 }}>
                 Welcome back{greetingName ? `, ${greetingName}` : ''}
               </Title>
-              <Text size="lg" fw={600} c="white">
-                {centreName}
-              </Text>
-              <Text size="sm" c="rgba(255,255,255,0.75)">
-                {locationBlurb || 'Ready to deliver exceptional care today.'}
-              </Text>
-              <Group gap="xs">
-                {practiceLabel && (
-                  <Badge
-                    color="gray"
-                    variant="outline"
-                    style={{ borderColor: 'rgba(255,255,255,0.65)', color: theme.white }}
-                  >
-                    {practiceLabel}
-                  </Badge>
-                )}
-                <Badge variant="light" color="teal">
-                  {data.totals.totalPatients} patients on record
-                </Badge>
-                <Badge variant="light" color="yellow">
-                  {totalAppointments} upcoming visits
-                </Badge>
-              </Group>
-            </Stack>
-            <Paper
-              withBorder
-              radius="lg"
-              p="lg"
-              style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
-              maw={320}
-            >
-              <Stack gap="sm">
-                <Group gap="xs">
-                  <ThemeIcon variant="light" color="teal" radius="md">
-                    <IconHeartbeat size={20} />
-                  </ThemeIcon>
-                  <Text fw={600} c="white">
-                    Today’s care pulse
-                  </Text>
-                </Group>
-                <Text size="sm" c="rgba(255,255,255,0.75)">
-                  {completedAppointments} appointments already wrapped up. Keep the momentum going!
+              {doctorProfile?.centreName && (
+                <Text fw={600} size="lg" c="white" style={{ opacity: 0.92 }}>
+                  {doctorProfile.centreName}
                 </Text>
-                <Stack gap={4}>
-                  <Group justify="space-between" gap="xs">
-                    <Text size="xs" c="rgba(255,255,255,0.6)">
-                      Completion rate
-                    </Text>
-                    <Text size="xs" fw={600} c="white">
-                      {appointmentCompletionRate}%
-                    </Text>
-                  </Group>
-                  <Progress color="teal" value={appointmentCompletionRate} radius="xl" />
-                </Stack>
-              </Stack>
-            </Paper>
+              )}
+              <Text size="sm" c="white" style={{ opacity: 0.82 }}>
+                {locationBlurb || 'All your clinic metrics, appointments, and inventory in one offline-ready HQ.'}
+              </Text>
+            </Stack>
+            <Group gap="sm" align="flex-start">
+              <ThemeIcon size={72} radius="xl" variant="white" color="teal">
+                <IconHeartbeat size={36} />
+              </ThemeIcon>
+            </Group>
           </Group>
-          {quickActionModules.length > 0 && (
+
+          {quickActions.length > 0 ? (
             <Group gap="sm" wrap="wrap">
-              {quickActionModules.map((module) => (
+              {quickActions.map((action) => (
                 <Button
-                  key={module.key}
-                  variant="light"
-                  color="dark"
-                  rightSection={<IconArrowRight size={16} />}
-                  onClick={() => navigate(moduleRoutes[module.key] ?? '/')}
+                  key={action.key}
+                  variant="white"
+                  color="teal"
+                  leftSection={<action.icon size={16} />}
+                  onClick={() => navigate(action.path)}
                 >
-                  Open {module.name}
+                  {action.label}
                 </Button>
               ))}
-              <Button
-                variant="default"
-                color="gray"
-                onClick={() => navigate('/analytics')}
-                rightSection={<IconClipboardText size={16} />}
-              >
-                View analytics
-              </Button>
+              {enabledModuleKeys.includes('analytics') && (
+                <Button
+                  variant="light"
+                  color="indigo"
+                  rightSection={<IconArrowRight size={16} />}
+                  onClick={() => navigate('/analytics')}
+                >
+                  View analytics
+                </Button>
+              )}
             </Group>
+          ) : (
+            <Text size="sm" c="white" style={{ opacity: 0.8 }}>
+              Enable additional modules from your setup wizard to unlock quick actions here.
+            </Text>
           )}
         </Stack>
       </Card>
 
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
-        <Card shadow="sm" withBorder padding="xl">
+        <Card
+          shadow="lg"
+          padding="xl"
+          radius="lg"
+          style={{
+            background: 'linear-gradient(135deg, rgba(32, 201, 151, 0.16) 0%, rgba(32, 201, 151, 0.04) 100%)',
+            border: '1px solid rgba(32, 201, 151, 0.18)'
+          }}
+        >
           <Group>
-            <ThemeIcon color="blue" radius="md" size={46}>
+            <ThemeIcon color="teal" radius="md" size={46} variant="light">
               <IconUsersGroup size={24} />
             </ThemeIcon>
             <div>
@@ -215,14 +193,24 @@ const Dashboard: React.FC = () => {
                 {data.totals.totalPatients}
               </Text>
               <Text size="xs" c="dimmed">
-                Growing patient base keeps your practice thriving.
+                {data.totals.totalPatients > 0
+                  ? 'Your panel is growing steadily.'
+                  : 'No records yet — add your first patient.'}
               </Text>
             </div>
           </Group>
         </Card>
-        <Card shadow="sm" withBorder padding="xl">
+        <Card
+          shadow="lg"
+          padding="xl"
+          radius="lg"
+          style={{
+            background: 'linear-gradient(135deg, rgba(55, 135, 245, 0.15) 0%, rgba(55, 135, 245, 0.04) 100%)',
+            border: '1px solid rgba(55, 135, 245, 0.2)'
+          }}
+        >
           <Group>
-            <ThemeIcon color="green" radius="md" size={46}>
+            <ThemeIcon color="indigo" radius="md" size={46} variant="light">
               <IconCalendarTime size={24} />
             </ThemeIcon>
             <div>
@@ -233,14 +221,24 @@ const Dashboard: React.FC = () => {
                 {data.totals.upcomingAppointments}
               </Text>
               <Text size="xs" c="dimmed">
-                {appointmentCompletionRate}% completed so far today.
+                {data.totals.upcomingAppointments > 0
+                  ? 'Stay on time with your booked sessions.'
+                  : 'No appointments scheduled yet.'}
               </Text>
             </div>
           </Group>
         </Card>
-        <Card shadow="sm" withBorder padding="xl">
+        <Card
+          shadow="lg"
+          padding="xl"
+          radius="lg"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 184, 77, 0.18) 0%, rgba(255, 184, 77, 0.05) 100%)',
+            border: '1px solid rgba(255, 184, 77, 0.24)'
+          }}
+        >
           <Group>
-            <ThemeIcon color="orange" radius="md" size={46}>
+            <ThemeIcon color="orange" radius="md" size={46} variant="light">
               <IconCurrencyRupee size={24} />
             </ThemeIcon>
             <div>
@@ -251,21 +249,18 @@ const Dashboard: React.FC = () => {
                 {Number(data.totals.revenueLKR).toLocaleString('en-LK')}
               </Text>
               <Text size="xs" c="dimmed">
-                Track payments and balances in real time.
+                {data.totals.revenueLKR > 0
+                  ? 'Keep tabs on cash flow and receivables.'
+                  : 'Record a payment to start tracking revenue.'}
               </Text>
             </div>
           </Group>
         </Card>
       </SimpleGrid>
 
-      <Card withBorder shadow="sm" padding="xl" radius="lg">
+      <Card withBorder shadow="lg" padding="xl" radius="lg">
         <Stack gap="sm">
-          <Group justify="space-between">
-            <Title order={4}>Top prescribed medications</Title>
-            <Badge color="blue" variant="light">
-              Snapshot of recent scripts
-            </Badge>
-          </Group>
+          <Title order={4}>Top prescribed medications</Title>
           {data.topMedications.length === 0 ? (
             <Text size="sm" c="dimmed">
               No prescriptions recorded yet.
@@ -274,14 +269,28 @@ const Dashboard: React.FC = () => {
             <Grid>
               {data.topMedications.map((item) => (
                 <Grid.Col key={item.medication} span={{ base: 12, sm: 6, md: 4 }}>
-                  <Card withBorder shadow="xs" padding="md">
-                    <Stack gap={2}>
-                      <Text fw={600}>{item.medication}</Text>
-                      <Text size="xs" c="dimmed">
-                        {item.count} prescriptions
-                      </Text>
-                    </Stack>
-                  </Card>
+                  <Paper
+                    withBorder
+                    shadow="xs"
+                    radius="md"
+                    p="md"
+                    style={{
+                      borderColor: 'rgba(32, 201, 151, 0.25)',
+                      boxShadow: '0 10px 22px rgba(15, 23, 42, 0.08)'
+                    }}
+                  >
+                    <Group justify="space-between" align="center">
+                      <Stack gap={2}>
+                        <Text fw={600}>{item.medication}</Text>
+                        <Text size="xs" c="dimmed">
+                          {item.count} prescriptions
+                        </Text>
+                      </Stack>
+                      <ThemeIcon size={rem(36)} radius="lg" variant="light" color="teal">
+                        <IconHeartbeat size={18} />
+                      </ThemeIcon>
+                    </Group>
+                  </Paper>
                 </Grid.Col>
               ))}
             </Grid>

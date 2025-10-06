@@ -5,13 +5,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppRouter from './routes/AppRouter';
 import './styles/global.css';
 import '@mantine/core/styles.css';
+import { mediBridgeTheme } from './styles/theme';
 
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <MantineProvider defaultColorScheme="light">
+      <MantineProvider theme={mediBridgeTheme} defaultColorScheme="light">
         <AppRouter />
       </MantineProvider>
     </QueryClientProvider>
