@@ -1,3 +1,11 @@
+<h3 align="center">
+  <img src="https://img.shields.io/badge/Project-MediBridge-blue?style=for-the-badge&logo=medrt&logoColor=white" />
+  <img src="https://img.shields.io/badge/Focus-Digital%20Healthcare-green?style=for-the-badge&logo=heartbeat&logoColor=white" />
+  <img src="https://img.shields.io/badge/Platform-Open%20Source-orange?style=for-the-badge&logo=github&logoColor=white" />
+  <img src="https://img.shields.io/badge/Built%20For-Doctors%20%26%20Clinics-red?style=for-the-badge&logo=stethoscope&logoColor=white" />
+  <img src="https://img.shields.io/badge/Priority-Privacy%20%26%20Security-purple?style=for-the-badge&logo=shield&logoColor=white" />
+</h3>
+
 # MediBridge Desktop
 
 Offline-first practice management app tailored for Sri Lankan doctors. Built with Electron, React, Vite, Mantine UI, and a local SQLite database for secure data storage without internet requirements.
