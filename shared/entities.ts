@@ -16,6 +16,7 @@ export interface DoctorProfileEntity {
   practice_type: string;
   centre_name?: string | null;
   location?: string | null;
+  password?: string | null;
   created_at: string;
 }
 
@@ -26,6 +27,7 @@ export interface DoctorProfile {
   practiceType: string;
   centreName?: string | null;
   location?: string | null;
+  password?: string | null;
   createdAt: string;
 }
 

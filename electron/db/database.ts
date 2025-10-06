@@ -194,6 +194,7 @@ class MediBridgeDatabase {
         practice_type TEXT NOT NULL,
         centre_name TEXT,
         location TEXT,
+        password TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -286,6 +287,16 @@ class MediBridgeDatabase {
     this.instance.exec(createTablesSQL);
     try {
       this.instance.exec('ALTER TABLE doctor_profile ADD COLUMN centre_name TEXT;');
+      this.markDirty();
+    } catch (error) {
+      if (error instanceof Error && /duplicate column name/i.test(error.message)) {
+        // Column already exists, ignore.
+      } else {
+        throw error;
+      }
+    }
+    try {
+      this.instance.exec('ALTER TABLE doctor_profile ADD COLUMN password TEXT;');
       this.markDirty();
     } catch (error) {
       if (error instanceof Error && /duplicate column name/i.test(error.message)) {

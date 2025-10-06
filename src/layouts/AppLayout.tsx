@@ -31,7 +31,8 @@ const routeMap: Record<string, string> = {
   pharmacy_inventory: '/pharmacy',
   analytics: '/analytics',
   collaboration: '/collaboration',
-  medical_certificates: '/certificates'
+  medical_certificates: '/certificates',
+  clinical_calculators: '/calculators'
 };
 
 interface NavItem {
@@ -90,7 +91,7 @@ const AppLayout: FC = () => {
   return (
     <AppShell
       header={{ height: 88 }}
-      navbar={{ width: 270, breakpoint: 'sm', collapsed: { mobile: !opened } }}
+      navbar={{ width: 304, breakpoint: 'sm', collapsed: { mobile: !opened } }}
       padding="lg"
       withBorder={false}
     >
@@ -111,12 +112,12 @@ const AppLayout: FC = () => {
                 </Text>
                 <Group gap={6} wrap="wrap">
                   {practiceLabel && (
-                    <Badge color="teal" variant="light" radius="sm">
+                    <Badge color="teal" variant="filled" radius="sm">
                       {practiceLabel}
                     </Badge>
                   )}
                   {doctorProfile?.centreName && (
-                    <Badge color="indigo" variant="light" radius="sm">
+                    <Badge color="indigo" variant="filled" radius="sm">
                       Trusted centre
                     </Badge>
                   )}
@@ -142,16 +143,16 @@ const AppLayout: FC = () => {
 
       <AppShell.Navbar p="md" withBorder={false}>
         <Stack gap="md" h="100%">
-          <Stack gap={4}>
-            <Group gap="xs">
-              <ThemeIcon size={rem(36)} radius="xl" color="teal" variant="light">
-                <TablerIcons.IconHeartbeat size={20} />
+          <Stack gap={2}>
+            <Group gap={6}>
+              <ThemeIcon size={rem(32)} radius="xl" color="teal" variant="light">
+                <TablerIcons.IconHeartbeat size={18} />
               </ThemeIcon>
               <Stack gap={0}>
-                <Text fw={600} size="sm" c="dimmed">
+                <Text fw={600} size="xs" c="dimmed">
                   Navigate MediBridge
                 </Text>
-                <Text size="xs" c="dimmed" style={{ opacity: 0.7 }}>
+                <Text size="xs" c="dimmed" style={{ opacity: 0.7, fontSize: rem(11) }}>
                   Choose a workspace to get started
                 </Text>
               </Stack>
@@ -160,7 +161,7 @@ const AppLayout: FC = () => {
           </Stack>
 
           <AppShell.Section component={ScrollArea} type="scroll" flex={1} px={4}>
-            <Stack gap="xs">
+            <Stack gap={4}>
               {navItems.map((item: NavItem) => {
                 const IconComponent = ICON_COMPONENTS[item.icon] ?? TablerIcons.IconCircle;
                 const isActive = location.pathname === item.path;
@@ -173,12 +174,12 @@ const AppLayout: FC = () => {
                     variant="light"
                     leftSection={
                       <ThemeIcon
-                        size={rem(32)}
+                        size={rem(28)}
                         variant={isActive ? 'filled' : 'light'}
                         color={isActive ? 'teal' : 'teal'}
                         style={{ backgroundColor: isActive ? undefined : 'var(--mantine-color-teal-0)' }}
                       >
-                        <IconComponent size={18} />
+                        <IconComponent size={16} />
                       </ThemeIcon>
                     }
                     onClick={() => navigate(item.path)}
@@ -187,8 +188,8 @@ const AppLayout: FC = () => {
                       boxShadow: isActive ? '0 12px 24px rgba(0, 128, 96, 0.12)' : '0 4px 12px rgba(15, 23, 42, 0.05)'
                     }}
                     styles={{
-                      label: { fontWeight: 600 },
-                      description: { fontSize: rem(12), opacity: 0.75 }
+                      label: { fontWeight: 600, fontSize: rem(13) },
+                      description: { fontSize: rem(11), opacity: 0.7 }
                     }}
                   />
                 );
@@ -201,14 +202,14 @@ const AppLayout: FC = () => {
             bg="var(--mantine-color-white)"
             style={{ borderRadius: rem(14), boxShadow: '0 14px 36px rgba(15, 23, 42, 0.12)' }}
           >
-            <Stack gap={6}>
-              <Group gap={6}>
-                <TablerIcons.IconSparkles size={16} color="var(--mantine-color-teal-6)" />
-                <Text fw={600} size="sm">
+            <Stack gap={4}>
+              <Group gap={4}>
+                <TablerIcons.IconSparkles size={14} color="var(--mantine-color-teal-6)" />
+                <Text fw={600} size="xs">
                   Pro tip
                 </Text>
               </Group>
-              <Text size="xs" c="dimmed">
+              <Text size="xs" c="dimmed" style={{ fontSize: rem(11), lineHeight: 1.4 }}>
                 Enable more modules anytime from the setup wizard to unlock richer clinic workflows.
               </Text>
             </Stack>

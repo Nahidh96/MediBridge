@@ -6,6 +6,7 @@ export interface SetupAnswers {
   practiceType: PracticeType;
   centreName?: string;
   location?: string;
+  password?: string;
   modules: string[];
 }
 
