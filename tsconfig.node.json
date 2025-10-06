@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "lib": ["ES2020"],
+    "outDir": "dist-electron",
+    "types": ["node"],
+    "allowSyntheticDefaultImports": true,
+    "noEmit": false,
+    "declaration": false
+  },
+  "include": ["electron/**/*.ts", "shared/**/*.ts"],
+  "exclude": ["dist", "dist-electron", "node_modules"]
+}
