@@ -1,5 +1,6 @@
 import { useMemo, type ComponentType, type FC } from 'react';
 import {
+  ActionIcon,
   AppShell,
   Badge,
   Box,
@@ -11,6 +12,7 @@ import {
   Stack,
   Text,
   ThemeIcon,
+  Tooltip,
   rem
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
@@ -89,12 +91,13 @@ const AppLayout: FC = () => {
     'linear-gradient(135deg, var(--mantine-color-teal-7) 0%, var(--mantine-color-blue-6) 60%, var(--mantine-color-indigo-6) 100%)';
 
   return (
-    <AppShell
-      header={{ height: 88 }}
-      navbar={{ width: 304, breakpoint: 'sm', collapsed: { mobile: !opened } }}
-      padding="lg"
-      withBorder={false}
-    >
+    <>
+      <AppShell
+        header={{ height: 88 }}
+        navbar={{ width: 304, breakpoint: 'sm', collapsed: { mobile: !opened } }}
+        padding="lg"
+        withBorder={false}
+      >
       <AppShell.Header style={{ background: headerGradient }}>
         <Box h="100%" px="lg">
           <Group h="100%" justify="space-between" wrap="nowrap">
@@ -217,12 +220,78 @@ const AppLayout: FC = () => {
         </Stack>
       </AppShell.Navbar>
 
-      <AppShell.Main>
-        <Box maw={1200} mx="auto" w="100%" px="md" pb="xl">
-          <Outlet />
+        <AppShell.Main>
+          <Box maw={1200} mx="auto" w="100%" px="md" pb="xl">
+            <Outlet />
+          </Box>
+        </AppShell.Main>
+      </AppShell>
+
+      <Box
+        component="footer"
+        w="100%"
+        py="md"
+        px="lg"
+        style={{
+          background: 'var(--mantine-color-gray-0)',
+          borderTop: '1px solid var(--mantine-color-gray-2)'
+        }}
+      >
+        <Box maw={1200} mx="auto" w="100%">
+          <Group justify="space-between" align="center" gap="sm" wrap="wrap">
+            <Stack gap={0}>
+              <Text size="xs" fw={700}>
+                MediBridge
+              </Text>
+                <Text size="xs" c="dimmed">
+                Developed by Nahidh Naseem - mnmnahidh@gmail.com
+                </Text>
+            </Stack>
+            <Group gap="xs">
+              <Tooltip label="Portfolio" withArrow>
+                <ActionIcon
+                  component="a"
+                  href="https://www.nahidh.me/"
+                  target="_blank"
+                  rel="noreferrer"
+                  variant="subtle"
+                  color="blue"
+                  size="lg"
+                >
+                  <TablerIcons.IconWorld size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label="GitHub" withArrow>
+                <ActionIcon
+                  component="a"
+                  href="https://github.com/Nahidh96/"
+                  target="_blank"
+                  rel="noreferrer"
+                  variant="subtle"
+                  color="dark"
+                  size="lg"
+                >
+                  <TablerIcons.IconBrandGithub size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label="LinkedIn" withArrow>
+                <ActionIcon
+                  component="a"
+                  href="https://www.linkedin.com/in/nahidh-naseem/"
+                  target="_blank"
+                  rel="noreferrer"
+                  variant="subtle"
+                  color="blue"
+                  size="lg"
+                >
+                  <TablerIcons.IconBrandLinkedin size={18} />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
+          </Group>
         </Box>
-      </AppShell.Main>
-    </AppShell>
+      </Box>
+    </>
   );
 };
 
